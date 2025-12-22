@@ -758,21 +758,23 @@ if not detailed_solutions:
     st.warning("No feasible solutions found.")
     st.stop()
 
-# --- reorder detailed solutions to match summary_df ---
-detailed_lookup = {sol["Name"]: sol for sol in detailed_solutions}
+# Create lookup using list indices to ensure every solution is kept
+detailed_lookup = {i: sol for i, sol in enumerate(detailed_solutions)}
 
+# Match summary_df rows to their corresponding detailed solution by index
 ordered_detailed_solutions = [
-    detailed_lookup[name]
-    for name in summary_df["Backup Drivers"]
-    if name in detailed_lookup
+    detailed_lookup[idx]
+    for idx in summary_df.index
+    if idx in detailed_lookup
 ]
 
-st.write(f"Total rows in summary_df: {len(summary_df)}")
-st.write(f"Total keys in detailed_lookup: {len(detailed_lookup)}")
-st.write(f"Final ordered solutions: {len(ordered_detailed_solutions)}")
+# Create tab titles. If names are duplicates, add the rank to distinguish them.
+tab_titles = [
+    f"{s['Name']} (Rank {i+1})" 
+    for i, s in enumerate(ordered_detailed_solutions)
+]
 
-
-tabs = st.tabs([s["Name"] for s in ordered_detailed_solutions])
+tabs = st.tabs(tab_titles)
 
 for tab, sol in zip(tabs, ordered_detailed_solutions):
     with tab:
