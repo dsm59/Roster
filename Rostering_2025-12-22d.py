@@ -767,7 +767,7 @@ ordered_detailed_solutions = [
     if name in detailed_lookup
 ]
 
-print(len(ordered_detailed_solutions))
+st.write(len(ordered_detailed_solutions))
 
 
 tabs = st.tabs([s["Name"] for s in ordered_detailed_solutions])
