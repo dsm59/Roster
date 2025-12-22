@@ -405,7 +405,7 @@ N_preferred = len(Preferred_Drivers)
 # PROCESS ROSTER
 # =============================================================================
 
-if not process:
+if not process and not st.session_state.get("optimisation_done", False):
     st.stop()
 
 st.subheader("Input Summary")
@@ -546,177 +546,187 @@ if Staying_drivers + N_gaps != Total_runs:
 # =============================================================================
 # OPTIMISATION
 # =============================================================================
-
-min_moves_found = np.inf
-summary_results = []
-detailed_solutions = []
-
-skills_lookup = Skills_Matrix_Available.set_index('Driver')
-
-with st.spinner("Optimising roster combinations..."):
-    for combo in itertools.combinations(Replacement_Drivers, N_gaps):
-
-        # Force preferred driver usage
-        if Preferred_Drivers:
-            combo_set = set(combo)
+if process:
+    min_moves_found = np.inf
+    summary_results = []
+    detailed_solutions = []
     
-            if N_preferred >= N_gaps:
-                # Only preferred drivers allowed
-                if not combo_set.issubset(Preferred_Drivers):
-                    continue
-            else:
-                # All preferred drivers must be included
-                if not set(Preferred_Drivers).issubset(combo_set):
-                    continue
-
-        combo_name = ", ".join(combo)
-
-        drivers_fixed = Available_Drivers[
-            ~Available_Drivers['Driver'].isin(Replacement_Drivers)
-        ][['Driver']]
-
-        drivers_test = pd.concat(
-            [drivers_fixed, pd.DataFrame({'Driver': combo})],
-            ignore_index=True
-        )
-
-        skills_combo = (
-            Skills_Matrix_Available
-            .set_index('Driver')
-            .loc[drivers_test['Driver']]
-            .reset_index()
-        )
+    skills_lookup = Skills_Matrix_Available.set_index('Driver')
+    
+    with st.spinner("Optimising roster combinations..."):
+        for combo in itertools.combinations(Replacement_Drivers, N_gaps):
+    
+            # Force preferred driver usage
+            if Preferred_Drivers:
+                combo_set = set(combo)
         
-        cost_matrix = skills_combo[all_operating_runs].copy()
-        cost_matrix = cost_matrix.where(cost_matrix >= Minimum_Skill_Level, np.nan)
-        cost_matrix = cost_matrix.where(cost_matrix.isna(), 1)
-        
-        # Staying put = cost 0
-        for i, d in enumerate(skills_combo['Driver']):
-            orig_run = original_assignments_lookup.get(d)
-            if orig_run in all_operating_runs:
-                cost_matrix.at[i, orig_run] = 0
-        
-        # FORCE keep-in-run drivers (cannot be reassigned)
-        for i, d in enumerate(skills_combo['Driver']):
-            if d in Keep_In_Run_Drivers:
-                orig_run = original_assignments_lookup.get(d)
-                for run in all_operating_runs:
-                    if run != orig_run:
-                        cost_matrix.at[i, run] = 1e9
-        
-        cost_matrix = cost_matrix.fillna(1e9).values
-
-        row_idx, col_idx = linear_sum_assignment(cost_matrix)
-        total_cost = cost_matrix[row_idx, col_idx].sum()
-
-        if total_cost >= 1e9:
-            summary_results.append({
-                "Backup Drivers": combo_name,
-                "Moves": np.nan,
-                "Avg Skill": np.nan,
-                "Low Skill Runs": np.nan
-            })
-            continue
-
-        moves = int((cost_matrix[row_idx, col_idx] == 1).sum())
-
-        assignment = pd.DataFrame({
-            "Driver": skills_combo.iloc[row_idx]['Driver'].values,
-            "Assigned_Run": [all_operating_runs[i] for i in col_idx]
-        })
-
-        assignment["Original_Run"] = assignment["Driver"].map(
-            original_assignments_lookup
-        )
-
-        assignment["Moved"] = (
-            assignment["Assigned_Run"] != assignment["Original_Run"]
-        )
-
-        assignment["Skill_Level"] = assignment.apply(
-            lambda r: skills_lookup.at[r.Driver, r.Assigned_Run],
-            axis=1
-        )
-        
-        optimised_driver_set = set(assignment["Driver"])
-        
-        # =============================================================================
-        # APPEND DISPLAY-ONLY DRIVERS (NOT OPTIMISED, NOT ABSENT)
-        # =============================================================================
-        
-        assigned_drivers = set(assignment["Driver"])
-        absent_set = set(Absent_Drivers)
-        
-        extra_rows = []
-        
-        for d in Display_Only_Drivers:
-            if (
-                d not in assigned_drivers and
-                d not in absent_set and
-                d in original_assignments_lookup
-            ):
-                orig_run = original_assignments_lookup[d]
-        
-                if pd.isna(orig_run):
-                    continue
-                
-                skills_lookup_displayonly = Skills_Matrix.set_index('Driver')
-                
-                orig_run_modified = orig_run.removesuffix(" (T)") if isinstance(orig_run, str) else orig_run
-                
-                skill_level = np.nan
-                if d in skills_lookup_displayonly.index:
-                    if orig_run in skills_lookup_displayonly.columns:
-                        skill_level = skills_lookup_displayonly.at[d, orig_run]
-                    elif orig_run_modified in skills_lookup_displayonly.columns:
-                        skill_level = skills_lookup_displayonly.at[d, orig_run_modified]
-                
-                extra_rows.append({
-                    "Driver": d,
-                    "Original_Run": orig_run,
-                    "Assigned_Run": orig_run,
-                    "Moved": False,
-                    "Skill_Level": skill_level
-                })
-        
-        if extra_rows:
-            assignment = pd.concat(
-                [assignment, pd.DataFrame(extra_rows)],
+                if N_preferred >= N_gaps:
+                    # Only preferred drivers allowed
+                    if not combo_set.issubset(Preferred_Drivers):
+                        continue
+                else:
+                    # All preferred drivers must be included
+                    if not set(Preferred_Drivers).issubset(combo_set):
+                        continue
+    
+            combo_name = ", ".join(combo)
+    
+            drivers_fixed = Available_Drivers[
+                ~Available_Drivers['Driver'].isin(Replacement_Drivers)
+            ][['Driver']]
+    
+            drivers_test = pd.concat(
+                [drivers_fixed, pd.DataFrame({'Driver': combo})],
                 ignore_index=True
             )
-
-        optimised_rows = assignment[
-            assignment["Driver"].isin(optimised_driver_set)
-        ]
-        
-        avg_skill = optimised_rows["Skill_Level"].mean()
-        
-        low_skill = (
-            optimised_rows["Skill_Level"] < 6
-        ).sum()
-        
-        summary_results.append({
-            "Backup Drivers": combo_name,
-            "Moves": moves,
-            "Avg Skill": avg_skill,
-            "Low Skill Runs": low_skill
-        })
-
-        if moves <= min_moves_found:
-            min_moves_found = min(min_moves_found, moves)
-            detailed_solutions.append({
-                "Name": combo_name,
-                "Data": assignment
+    
+            skills_combo = (
+                Skills_Matrix_Available
+                .set_index('Driver')
+                .loc[drivers_test['Driver']]
+                .reset_index()
+            )
+            
+            cost_matrix = skills_combo[all_operating_runs].copy()
+            cost_matrix = cost_matrix.where(cost_matrix >= Minimum_Skill_Level, np.nan)
+            cost_matrix = cost_matrix.where(cost_matrix.isna(), 1)
+            
+            # Staying put = cost 0
+            for i, d in enumerate(skills_combo['Driver']):
+                orig_run = original_assignments_lookup.get(d)
+                if orig_run in all_operating_runs:
+                    cost_matrix.at[i, orig_run] = 0
+            
+            # FORCE keep-in-run drivers (cannot be reassigned)
+            for i, d in enumerate(skills_combo['Driver']):
+                if d in Keep_In_Run_Drivers:
+                    orig_run = original_assignments_lookup.get(d)
+                    for run in all_operating_runs:
+                        if run != orig_run:
+                            cost_matrix.at[i, run] = 1e9
+            
+            cost_matrix = cost_matrix.fillna(1e9).values
+    
+            row_idx, col_idx = linear_sum_assignment(cost_matrix)
+            total_cost = cost_matrix[row_idx, col_idx].sum()
+    
+            if total_cost >= 1e9:
+                summary_results.append({
+                    "Backup Drivers": combo_name,
+                    "Moves": np.nan,
+                    "Avg Skill": np.nan,
+                    "Low Skill Runs": np.nan
+                })
+                continue
+    
+            moves = int((cost_matrix[row_idx, col_idx] == 1).sum())
+    
+            assignment = pd.DataFrame({
+                "Driver": skills_combo.iloc[row_idx]['Driver'].values,
+                "Assigned_Run": [all_operating_runs[i] for i in col_idx]
             })
+    
+            assignment["Original_Run"] = assignment["Driver"].map(
+                original_assignments_lookup
+            )
+    
+            assignment["Moved"] = (
+                assignment["Assigned_Run"] != assignment["Original_Run"]
+            )
+    
+            assignment["Skill_Level"] = assignment.apply(
+                lambda r: skills_lookup.at[r.Driver, r.Assigned_Run],
+                axis=1
+            )
+            
+            optimised_driver_set = set(assignment["Driver"])
+            
+            # =============================================================================
+            # APPEND DISPLAY-ONLY DRIVERS (NOT OPTIMISED, NOT ABSENT)
+            # =============================================================================
+            
+            assigned_drivers = set(assignment["Driver"])
+            absent_set = set(Absent_Drivers)
+            
+            extra_rows = []
+            
+            for d in Display_Only_Drivers:
+                if (
+                    d not in assigned_drivers and
+                    d not in absent_set and
+                    d in original_assignments_lookup
+                ):
+                    orig_run = original_assignments_lookup[d]
+            
+                    if pd.isna(orig_run):
+                        continue
+                    
+                    skills_lookup_displayonly = Skills_Matrix.set_index('Driver')
+                    
+                    orig_run_modified = orig_run.removesuffix(" (T)") if isinstance(orig_run, str) else orig_run
+                    
+                    skill_level = np.nan
+                    if d in skills_lookup_displayonly.index:
+                        if orig_run in skills_lookup_displayonly.columns:
+                            skill_level = skills_lookup_displayonly.at[d, orig_run]
+                        elif orig_run_modified in skills_lookup_displayonly.columns:
+                            skill_level = skills_lookup_displayonly.at[d, orig_run_modified]
+                    
+                    extra_rows.append({
+                        "Driver": d,
+                        "Original_Run": orig_run,
+                        "Assigned_Run": orig_run,
+                        "Moved": False,
+                        "Skill_Level": skill_level
+                    })
+            
+            if extra_rows:
+                assignment = pd.concat(
+                    [assignment, pd.DataFrame(extra_rows)],
+                    ignore_index=True
+                )
+    
+            optimised_rows = assignment[
+                assignment["Driver"].isin(optimised_driver_set)
+            ]
+            
+            avg_skill = optimised_rows["Skill_Level"].mean()
+            
+            low_skill = (
+                optimised_rows["Skill_Level"] < 6
+            ).sum()
+            
+            summary_results.append({
+                "Backup Drivers": combo_name,
+                "Moves": moves,
+                "Avg Skill": avg_skill,
+                "Low Skill Runs": low_skill
+            })
+    
+            if moves <= min_moves_found:
+                min_moves_found = min(min_moves_found, moves)
+       
+            detailed_solutions.append({
+            "Name": combo_name,
+            "Moves": moves,
+            "Data": assignment
+            })
+
+    # ✅ STORE RESULTS
+    st.session_state["summary_df"] = pd.DataFrame(summary_results)
+    st.session_state["detailed_solutions"] = detailed_solutions
+    st.session_state["min_moves_found"] = min_moves_found
+    st.session_state["optimisation_done"] = True
 
 # =============================================================================
 # SUMMARY DISPLAY
 # =============================================================================
+if st.session_state.get("optimisation_done", False):
+    summary_df = st.session_state["summary_df"]
+    detailed_solutions = st.session_state["detailed_solutions"]
+    min_moves_found = st.session_state["min_moves_found"]
 
 st.subheader("Optimisation Summary")
-
-summary_df = pd.DataFrame(summary_results)
 
 summary_df = summary_df.sort_values(
     ["Moves", "Avg Skill"],
@@ -724,8 +734,9 @@ summary_df = summary_df.sort_values(
 ).reset_index(drop=True)
 
 col1, col2, col3 = st.columns(3)
-col1.metric("Min Moves", (min_moves_found))
-col2.metric("Solutions Found", len(summary_df))
+min_moves_display = summary_df["Moves"].min()
+col1.metric("Min Moves", int(min_moves_display))
+col2.metric("Feasible Solutions", len(detailed_solutions))
 col3.metric("Runs Filled", N_gaps)
 
 def highlight_moves(val):
@@ -747,50 +758,61 @@ st.dataframe(
 )
 
 # =============================================================================
-# DETAILED SOLUTION VIEW
+# DETAILED SOLUTION VIEW (SELECTOR-BASED)
 # =============================================================================
 
-st.subheader("Detailed Assignments")
+st.subheader("Detailed Assignment")
 
 if not detailed_solutions:
     st.warning("No feasible solutions found.")
     st.stop()
 
-# Reorder detailed solutions to match summary_df
+# Build lookup
 detailed_lookup = {sol["Name"]: sol for sol in detailed_solutions}
 
-ordered_detailed_solutions = [
-    detailed_lookup[name]
-    for name in summary_df["Backup Drivers"]
-    if name in detailed_lookup
+# Filter to feasible solutions only and keep ranking from summary_df
+feasible_summary = summary_df[
+    summary_df["Moves"].notna() &
+    np.isfinite(summary_df["Moves"])
 ]
 
+if feasible_summary.empty:
+    st.warning("No feasible solutions available.")
+    st.stop()
 
-tabs = st.tabs([s["Name"] for s in ordered_detailed_solutions])
+# Build selector labels
+solution_labels = feasible_summary.apply(
+    lambda r: f"{r['Backup Drivers']}", #|  Moves: {int(r['Moves'])}  |  Avg Skill: {r['Avg Skill']:.2f}",
+    axis=1
+).tolist()
 
-for tab, sol in zip(tabs, ordered_detailed_solutions):
-    with tab:
-        df = sol["Data"].copy()
+selected_idx = st.selectbox(
+    "Select a feasible solution to inspect",
+    options=range(len(solution_labels)),
+    format_func=lambda i: solution_labels[i]
+)
 
-        def row_style(row):
-            if row.Skill_Level < 6:
-                return ["background-color:#feb2b2"] * len(row)
-            if row.Moved:
-                return ["background-color:#faf089"] * len(row)
-            return [""] * len(row)
+selected_name = feasible_summary.iloc[selected_idx]["Backup Drivers"]
+selected_solution = detailed_lookup[selected_name]
 
-        styled_df = (
-            df[["Driver", "Original_Run", "Assigned_Run", "Skill_Level", "Moved"]]
-            .style
-            .apply(row_style, axis=1)
-            .format({"Skill_Level": "{:.0f}"})
-        )
+df = selected_solution["Data"].copy()
 
-        st.dataframe(styled_df, width='stretch')
+def row_style(row):
+    if row.Skill_Level < 6:
+        return ["background-color:#feb2b2"] * len(row)
+    if row.Moved:
+        return ["background-color:#faf089"] * len(row)
+    return [""] * len(row)
 
-        low = df[df["Skill_Level"] < 6]
-        if not low.empty:
-            st.warning(
-                f"{len(low)} driver(s) skill level ≤ 5"
-            )
-        
+styled_df = (
+    df[["Driver", "Original_Run", "Assigned_Run", "Skill_Level", "Moved"]]
+    .style
+    .apply(row_style, axis=1)
+    .format({"Skill_Level": "{:.0f}"})
+)
+
+st.dataframe(styled_df, width="stretch")
+
+low = df[df["Skill_Level"] < 6]
+if not low.empty:
+    st.warning(f"{len(low)} driver(s) skill level ≤ 5")
