@@ -274,7 +274,7 @@ Replacement_Drivers = []
 # MATCH NAME IN SKILLS MATRIX AND ROSTER ORIGINAL
 # =============================================================================
 Skills_Matrix.index = Roster_Original['Driver']
-Skills_Matrix = Skills_Matrix.filter(regex='^(DR\d|R[A-Z]|V\d|G|FW)', axis=1)
+Skills_Matrix = Skills_Matrix.filter(regex='^(DR\d|R[A-Z]|V\d|G|FW)', axis=1) # Only keep runs, remove Logistics Manager, Driver Trainer etc
 Skills_Matrix = Skills_Matrix.dropna(how='all')
 Skills_Matrix = Skills_Matrix.reset_index()
 
@@ -410,9 +410,9 @@ if not process:
 
 st.subheader("Input Summary")
 
-# ---------------------------
+# =============================================================================
 # VALIDATION
-# ---------------------------
+# =============================================================================
 
 if not Replacement_Drivers:
     st.error("No replacement drivers selected.")
@@ -556,7 +556,7 @@ skills_lookup = Skills_Matrix_Available.set_index('Driver')
 with st.spinner("Optimising roster combinations..."):
     for combo in itertools.combinations(Replacement_Drivers, N_gaps):
 
-        # --- FORCE preferred driver usage logic ---
+        # Force preferred driver usage
         if Preferred_Drivers:
             combo_set = set(combo)
     
@@ -663,10 +663,8 @@ with st.spinner("Optimising roster combinations..."):
                 
                 skills_lookup_displayonly = Skills_Matrix.set_index('Driver')
                 
-                # 1. Always establish the modified name (removes suffix if it exists)
                 orig_run_modified = orig_run.removesuffix(" (T)") if isinstance(orig_run, str) else orig_run
                 
-                # 2. Determine Skill_Level with fallback logic
                 skill_level = np.nan
                 if d in skills_lookup_displayonly.index:
                     if orig_run in skills_lookup_displayonly.columns:
@@ -758,7 +756,7 @@ if not detailed_solutions:
     st.warning("No feasible solutions found.")
     st.stop()
 
-# --- reorder detailed solutions to match summary_df ---
+# Reorder detailed solutions to match summary_df
 detailed_lookup = {sol["Name"]: sol for sol in detailed_solutions}
 
 ordered_detailed_solutions = [
@@ -795,4 +793,4 @@ for tab, sol in zip(tabs, ordered_detailed_solutions):
             st.warning(
                 f"{len(low)} driver(s) skill level ≤ 5"
             )
-            
+        
