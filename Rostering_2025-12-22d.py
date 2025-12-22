@@ -274,7 +274,7 @@ Replacement_Drivers = []
 # MATCH NAME IN SKILLS MATRIX AND ROSTER ORIGINAL
 # =============================================================================
 Skills_Matrix.index = Roster_Original['Driver']
-Skills_Matrix = Skills_Matrix.filter(regex='r^(DR\d|R[A-Z]|V\d|G|FW)', axis=1)
+Skills_Matrix = Skills_Matrix.filter(regex='^(DR\d|R[A-Z]|V\d|G|FW)', axis=1)
 Skills_Matrix = Skills_Matrix.dropna(how='all')
 Skills_Matrix = Skills_Matrix.reset_index()
 
@@ -797,4 +797,5 @@ for tab, sol in zip(tabs, ordered_detailed_solutions):
             st.warning(
                 f"{len(low)} driver(s) skill level ≤ 5"
             )
+
 
