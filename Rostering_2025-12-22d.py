@@ -173,6 +173,7 @@ def Extract_Ops_Roster(Ops_Roster_Path, Date_Selected):
         
         Roster_Existing = pd.concat([Roster_Existing_Raw['Driver'], Runs_Col], axis=1)
         Roster_Existing.columns = ['Driver', Date_Selected]
+        Roster_Existing = Roster_Existing.dropna(subset=[Date_Selected])
         return Roster_Existing
     else:
         st.warning("PDF upload failed, script terminated, report this to PH: 022 375 4934.")
