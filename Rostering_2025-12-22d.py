@@ -36,9 +36,9 @@ def Create_Skills_Matrix(Roster_Availability_Export):
             Skills_Matrix_Uniform_Rows.append(Uniform_Row)
                 
     except FileNotFoundError:
-        print("Error: The file was not found.")
+        st.warning("Error: The Roster Availability Export file was not found.")
     except Exception as e:
-        print(f"An unexpected error occurred during file reading: {e}")
+        st.warning(f"An unexpected error occurred during file reading: {e}")
         
     Header = Skills_Matrix_Uniform_Rows[0] 
     Data_Rows = Skills_Matrix_Uniform_Rows[1:]
@@ -168,7 +168,7 @@ def Extract_Ops_Roster(Ops_Roster_Path, Date_Selected):
         Roster_Existing.columns = ['Driver', Date_Selected]
         return Roster_Existing
     else:
-        print("PDF upload failed, script terminated, report this to PH: 022 375 4934.")
+        st.warning("PDF upload failed, script terminated, report this to PH: 022 375 4934.")
         sys.exit(0)
 
 
@@ -283,8 +283,6 @@ Skills_Matrix = Skills_Matrix.reset_index()
 # =============================================================================
 Drivers_All = Roster_Original
 Is_A_Driver = Drivers_All['Driver'].isin(Skills_Matrix['Driver'])
-print(Is_A_Driver)
-print(Drivers_All)
 
 On_Original_Roster_Statuses = tuple(Skills_Matrix.columns.to_list())
 Is_Scheduled_To_Work_Mask = Drivers_All[Date_Selected].str.startswith(
@@ -327,7 +325,6 @@ Replacement_Drivers_To_Select_From = (
     Drivers_NotPresent_NonTrainee['Driver'].tolist()
 )
 
-print(Replacement_Drivers_To_Select_From)
 
 if Include_Auto_All_Not_Present_Drivers_As_Replacement:
     Replacement_Drivers.extend(Replacement_Drivers_To_Select_From)
@@ -770,6 +767,9 @@ ordered_detailed_solutions = [
     if name in detailed_lookup
 ]
 
+print(len(ordered_detailed_solutions))
+
+
 tabs = st.tabs([s["Name"] for s in ordered_detailed_solutions])
 
 for tab, sol in zip(tabs, ordered_detailed_solutions):
@@ -797,5 +797,4 @@ for tab, sol in zip(tabs, ordered_detailed_solutions):
             st.warning(
                 f"{len(low)} driver(s) skill level ≤ 5"
             )
-
-
+            
