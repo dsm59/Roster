@@ -767,7 +767,9 @@ ordered_detailed_solutions = [
     if name in detailed_lookup
 ]
 
-st.write(len(ordered_detailed_solutions))
+st.write(f"Total rows in summary_df: {len(summary_df)}")
+st.write(f"Total keys in detailed_lookup: {len(detailed_lookup)}")
+st.write(f"Final ordered solutions: {len(ordered_detailed_solutions)}")
 
 
 tabs = st.tabs([s["Name"] for s in ordered_detailed_solutions])
