@@ -208,10 +208,12 @@ Date_Inputted = st.sidebar.date_input(
 
 Date_Selected = Date_Inputted.strftime("%d/%m")
 
-Minimum_Skill_Level = st.sidebar.slider(
-    "Minimum Skill Level Required",
-    1, 10, 5
+initialise = st.sidebar.button(
+    "▶ Initialise Roster",
+    width='stretch'
 )
+
+
 
 st.sidebar.divider()
 st.sidebar.subheader("Replacement Rules")
@@ -249,11 +251,16 @@ if Include_Allow_Depot_Run_Driver_As_Replacement_AND_Cancel_Depot_Run == True an
 else:
     Force_Use_Depot = False
 
+Minimum_Skill_Level = st.sidebar.slider(
+    "Minimum Replacement Skill Level Required",
+    1, 10, 5
+)
+
 # =============================================================================
 # LOAD DATA
 # =============================================================================
 
-if Ops_Roster_Path and Roster_Availability_Export:
+if Ops_Roster_Path and Roster_Availability_Export and initialise:
     Skills_Matrix = Create_Skills_Matrix(Roster_Availability_Export)
     Roster_Original = Extract_Ops_Roster(
         Ops_Roster_Path,
@@ -261,7 +268,7 @@ if Ops_Roster_Path and Roster_Availability_Export:
     )
     
 else:
-    st.info("Upload an Ops Roster PDF to begin")
+    st.info("Upload files, select a date and press the button to begin")
     st.stop()
 
 Absent_Drivers = []
