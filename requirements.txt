@@ -1,6 +1,5 @@
 pdfplumber
 pandas
-itertools
 scipy
 numpy
 streamlit
