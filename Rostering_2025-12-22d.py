@@ -161,15 +161,23 @@ def Extract_Ops_Roster(Ops_Roster_Path, Date_Selected):
         
         # Filter for the specific date column
         Date_Mask = Roster_Existing_Raw.columns.str.contains(Date_Selected)
+    
+        if not Date_Mask.any():
+            st.warning(
+                f"No column matching the selected date ({Date_Selected}) "
+                "was found in the uploaded PDF. Please check your upload."
+            )
+            st.stop()  # Stop execution safely without exiting Python
+        
         Runs_Col = Roster_Existing_Raw.loc[:, Date_Mask]
         
         Roster_Existing = pd.concat([Roster_Existing_Raw['Driver'], Runs_Col], axis=1)
-        
         Roster_Existing.columns = ['Driver', Date_Selected]
         return Roster_Existing
     else:
         st.warning("PDF upload failed, script terminated, report this to PH: 022 375 4934.")
-        sys.exit(0)
+        st.stop()
+
 
 
 # =============================================================================
