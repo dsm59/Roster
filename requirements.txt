@@ -1,0 +1,10 @@
+pdfplumber
+pandas
+itertools
+scipy.optimize
+sys
+numpy
+streamlit
+csv
+re
+io
