@@ -758,32 +758,34 @@ if not detailed_solutions:
     st.warning("No feasible solutions found.")
     st.stop()
 
-# Create lookup using list indices to ensure every solution is kept
+# 1. Create the lookup using the index of the original detailed_solutions list
+# This prevents overwriting because every index (0, 1, 2...) is unique
 detailed_lookup = {i: sol for i, sol in enumerate(detailed_solutions)}
 
-# Match summary_df rows to their corresponding detailed solution by index
+# 2. Use the index from summary_df to pull the corresponding solution
+# summary_df.index refers to the original position in detailed_solutions
 ordered_detailed_solutions = [
     detailed_lookup[idx]
     for idx in summary_df.index
     if idx in detailed_lookup
 ]
 
-# Create tab titles. If names are duplicates, add the rank to distinguish them.
+# 3. Create unique tab labels
+# Streamlit requires unique tab labels; if names are identical, 
+# appending a rank makes them unique.
 tab_titles = [
-    f"{s['Name']} (Rank {i+1})" 
+    f"Sol {i+1}: {s['Name']}" 
     for i, s in enumerate(ordered_detailed_solutions)
 ]
 
 tabs = st.tabs(tab_titles)
 
-st.write(f"Total rows in summary_df: {len(summary_df)}")
-st.write(f"Total keys in detailed_lookup: {len(detailed_lookup)}")
-st.write(f"Final ordered solutions: {len(ordered_detailed_solutions)}")
-
+# 4. Display content in each of the 22 tabs
 for tab, sol in zip(tabs, ordered_detailed_solutions):
     with tab:
+        st.write(f"### Details for {sol['Name']}")
         df = sol["Data"].copy()
-
+        
         def row_style(row):
             if row.Skill_Level < 6:
                 return ["background-color:#feb2b2"] * len(row)
@@ -806,3 +808,6 @@ for tab, sol in zip(tabs, ordered_detailed_solutions):
                 f"{len(low)} driver(s) skill level ≤ 5"
             )
             
+st.write(f"Total rows in summary_df: {len(summary_df)}")
+st.write(f"Total keys in detailed_lookup: {len(detailed_lookup)}")
+st.write(f"Final ordered solutions: {len(ordered_detailed_solutions)}")
