@@ -1,10 +1,6 @@
 pdfplumber
 pandas
 itertools
-scipy.optimize
-sys
+scipy
 numpy
 streamlit
-csv
-re
-io
