@@ -776,6 +776,10 @@ tab_titles = [
 
 tabs = st.tabs(tab_titles)
 
+st.write(f"Total rows in summary_df: {len(summary_df)}")
+st.write(f"Total keys in detailed_lookup: {len(detailed_lookup)}")
+st.write(f"Final ordered solutions: {len(ordered_detailed_solutions)}")
+
 for tab, sol in zip(tabs, ordered_detailed_solutions):
     with tab:
         df = sol["Data"].copy()
