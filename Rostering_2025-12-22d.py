@@ -167,13 +167,16 @@ def Extract_Ops_Roster(Ops_Roster_Path, Date_Selected):
                 f"No column matching the selected date ({Date_Selected}) "
                 "was found in the uploaded PDF. Please check your upload."
             )
-            st.stop()  # Stop execution safely without exiting Python
+            st.stop()
         
         Runs_Col = Roster_Existing_Raw.loc[:, Date_Mask]
         
         Roster_Existing = pd.concat([Roster_Existing_Raw['Driver'], Runs_Col], axis=1)
         Roster_Existing.columns = ['Driver', Date_Selected]
+        
+        # Remove incorrectl;y inputted rows + remove numbers from end of driver name 
         Roster_Existing = Roster_Existing.dropna(subset=[Date_Selected])
+        Roster_Existing.loc[:, 'Driver'] = Roster_Existing['Driver'].str.replace(r'\d+', '', regex=True)
         return Roster_Existing
     else:
         st.warning("PDF upload failed, script terminated, report this to PH: 022 375 4934.")
@@ -282,7 +285,10 @@ Replacement_Drivers = []
 # =============================================================================
 # MATCH NAME IN SKILLS MATRIX AND ROSTER ORIGINAL
 # =============================================================================
-Skills_Matrix.index = Roster_Original['Driver']
+if len(Skills_Matrix) == len(Roster_Original):
+    Skills_Matrix.index = Roster_Original['Driver']
+else:
+    st.warning("Number of rows in skills matrix does not match number of rows in roster. It is likely that the Roster PDF was unable to be extracted")
 Skills_Matrix = Skills_Matrix.filter(regex='^(DR\d|R[A-Z]|V\d|G|FW)', axis=1) # Only keep runs, remove Logistics Manager, Driver Trainer etc
 Skills_Matrix = Skills_Matrix.dropna(how='all')
 Skills_Matrix = Skills_Matrix.reset_index()
