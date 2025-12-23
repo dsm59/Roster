@@ -243,7 +243,7 @@ if Include_Auto_Trainee_As_Replacement == True and Include_Auto_All_Not_Present_
         "Force use of trainees as replacements",
         False
     )
-    if Force_Use_Depot = True:
+    if Force_Use_Depot == True:
         st.sidebar.info("Improvements are coming to the 'Force use of trainees' feature")
 
     
@@ -260,7 +260,7 @@ if Include_Allow_Depot_Run_Driver_As_Replacement_AND_Cancel_Depot_Run == True an
         "Force use of depot drivers as replacements",
         False
     )
-    if Force_Use_Depot = True:
+    if Force_Use_Depot == True:
         st.sidebar.info("Improvements are coming to the 'Force use of depot drivers' feature")
     
 else:
@@ -840,6 +840,7 @@ st.dataframe(styled_df, width="stretch")
 low = df[df["Skill_Level"] < 6]
 if not low.empty:
     st.warning(f"{len(low)} driver(s) skill level ≤ 5")
+
 
 
 
