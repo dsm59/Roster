@@ -188,6 +188,8 @@ def Extract_Ops_Roster(Ops_Roster_Path, Date_Selected):
 # USER INPUTS ROUND 1
 # =============================================================================
 
+st.info("Thank you for testing this programme, please share any changes that would improve your experience and report any bugs that you encounter.")
+
 st.set_page_config(
     page_title="Last-Minute Rostering",
     page_icon="🚚",
@@ -750,7 +752,9 @@ summary_df = summary_df.sort_values(
 
 col1, col2, col3 = st.columns(3)
 min_moves_display = summary_df["Moves"].min()
-col1.metric("Min Moves", int(min_moves_display))
+if min_moves_display.is_integer():
+    min_moves_display = int(min_moves_display)
+col1.metric("Min Moves", (min_moves_display))
 col2.metric("Feasible Solutions", len(detailed_solutions))
 col3.metric("Runs Filled", N_gaps)
 
