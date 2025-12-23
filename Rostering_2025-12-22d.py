@@ -239,7 +239,7 @@ Include_Auto_Trainee_As_Replacement = st.sidebar.checkbox(
 )
 
 if Include_Auto_Trainee_As_Replacement == True and Include_Auto_All_Not_Present_Drivers_As_Replacement == True:
-    st.info("Improvements are coming to the 'Force use of trainees' feature")
+    st.sidebar.info("Improvements are coming to the 'Force use of trainees' feature")
     Force_Use_Trainees = st.sidebar.checkbox(
         "Force use of trainees as replacements",
         False
@@ -254,7 +254,7 @@ Include_Allow_Depot_Run_Driver_As_Replacement_AND_Cancel_Depot_Run = st.sidebar.
     )
 
 if Include_Allow_Depot_Run_Driver_As_Replacement_AND_Cancel_Depot_Run == True and Include_Auto_All_Not_Present_Drivers_As_Replacement == True:
-    st.info("Improvements are coming to the 'Force use of depot drivers' feature")
+    st.sidebar.info("Improvements are coming to the 'Force use of depot drivers' feature")
     Force_Use_Depot = st.sidebar.checkbox(
         "Force use of depot drivers as replacements",
         False
@@ -837,4 +837,5 @@ st.dataframe(styled_df, width="stretch")
 low = df[df["Skill_Level"] < 6]
 if not low.empty:
     st.warning(f"{len(low)} driver(s) skill level ≤ 5")
+
 
