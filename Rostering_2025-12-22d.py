@@ -226,25 +226,25 @@ if Date_Inputted:
 st.sidebar.divider()
 st.sidebar.subheader("Replacement Rules")
 
-Include_Auto_All_Not_Present_Drivers_As_Replacement = st.sidebar.checkbox(
+Include_Auto_All_Not_Present_Drivers_As_Replacement = st.sidebar.toggle(
     "Auto-include all non-rostered drivers",
     False,
-    help="Checking this box enables **all drivers not assigned to a run on the original roster** (e.g. off/hol etc) to be used as replacement drivers that can fill in empty runs.",
+    help="Selecting enables **all drivers not assigned to a run on the original roster** (e.g. off/hol etc) to be used as replacement drivers that can fill in empty runs.",
 )
 
-Include_Auto_Trainee_As_Replacement = st.sidebar.checkbox(
+Include_Auto_Trainee_As_Replacement = st.sidebar.toggle(
     "Re-assign trainee drivers to fill empty runs",
     False,
-    help="Checking this box enables **Trainee Drivers** to be used as replacement drivers that can fill in empty runs",
+    help="Selecting enables **Trainee Drivers** to be used as replacement drivers that can fill in empty runs",
 )
 Filter_Rosters_Trainees = False
 if Include_Auto_Trainee_As_Replacement == True:
     Filter_Rosters_Trainees = True    
 
-Include_Allow_Depot_Run_Driver_As_Replacement_AND_Cancel_Depot_Run = st.sidebar.checkbox(
+Include_Allow_Depot_Run_Driver_As_Replacement_AND_Cancel_Depot_Run = st.sidebar.toggle(
     "Re-assign depot drivers to fill empty runs",
     False,
-    help="Checking this box to enables **Depot Run Drivers** to be used as replacement drivers that can fill in empty runs. If a depot driver is selected and reassigned, the depot driver's original run will be cancelled",
+    help="Selecting enables **Depot Run Drivers** to be used as replacement drivers that can fill in empty runs. If a depot driver is selected and reassigned, the depot driver's original run will be cancelled",
     )
 
 Filter_Rosters_Depot = False
@@ -499,12 +499,10 @@ Operating_Runs = (
 
 col1, col2, col3, col4 = st.columns(4)
 
-col1.metric("Operating Runs", len(Operating_Runs))
-col2.metric("Absent Drivers", len(Absent_Drivers))
-col3.metric("Replacement Pool", len(Replacement_Drivers))
-col4.metric("Runs to Fill", len(Unfilled_Runs))
-
-st.success("Inputs validated. Optimisation ready to run.")
+col1.metric("Operating Runs", len(Operating_Runs),border=True)
+col2.metric("Absent Drivers", len(Absent_Drivers),border=True)
+col3.metric("Replacement Pool", len(Replacement_Drivers),border=True)
+col4.metric("Runs to Fill", len(Unfilled_Runs),border=True)
 
 # =============================================================================
 # REMOVE UNAVAILABLE DRIVERS FROM SKILLS MATRIX
@@ -731,6 +729,8 @@ if st.session_state.get("optimisation_done", False):
     detailed_solutions = st.session_state["detailed_solutions"]
     min_moves_found = st.session_state["min_moves_found"]
 
+st.subheader("Optimisation Summary",anchor=None, help="This is an overview of all of the feasible rosters found considering each driver combination")
+
 # =============================================================================
 # SUMMARY SORTING LOGIC
 # =============================================================================
@@ -769,10 +769,10 @@ col1, col2, col3, col4 = st.columns(4)
 min_moves_display = summary_df["Moves"].min()
 if min_moves_display.is_integer():
     min_moves_display = int(min_moves_display)
-col1.metric("Min Moves", (min_moves_display))
-col2.metric("Driver Combinations", len(summary_df))
-col3.metric("Feasible Solutions", len(detailed_solutions))
-col4.metric("Runs Filled", N_gaps)
+col1.metric("Min Moves", (min_moves_display),border=True)
+col2.metric("Driver Combinations", len(summary_df),border=True)
+col3.metric("Feasible Solutions", len(detailed_solutions),border=True)
+col4.metric("Runs Filled", N_gaps, border=True)
 
 def highlight_moves(val):
     if pd.isna(val):
