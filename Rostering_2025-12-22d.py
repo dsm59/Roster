@@ -233,7 +233,7 @@ Include_Auto_All_Not_Present_Drivers_As_Replacement = st.sidebar.toggle(
 )
 
 Include_Auto_Trainee_As_Replacement = st.sidebar.toggle(
-    "Re-assign trainee drivers to fill empty runs",
+    "Re-assign trainee drivers",
     False,
     help="Selecting enables **Trainee Drivers** to be used as replacement drivers that can fill in empty runs",
 )
@@ -242,7 +242,7 @@ if Include_Auto_Trainee_As_Replacement == True:
     Filter_Rosters_Trainees = True    
 
 Include_Allow_Depot_Run_Driver_As_Replacement_AND_Cancel_Depot_Run = st.sidebar.toggle(
-    "Re-assign depot drivers to fill empty runs",
+    "Re-assign depot drivers",
     False,
     help="Selecting enables **Depot Run Drivers** to be used as replacement drivers that can fill in empty runs. If a depot driver is selected and reassigned, the depot driver's original run will be cancelled",
     )
