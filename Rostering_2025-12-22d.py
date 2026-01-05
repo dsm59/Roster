@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Dec 18 12:25:41 2025
-
+Rostering_2025-12-29b
+Date: 05/05/2026
 @author: Daniel
 """
 
@@ -9,7 +9,6 @@ import pdfplumber
 import pandas as pd
 import itertools
 from scipy.optimize import linear_sum_assignment
-import sys
 import numpy as np
 import streamlit as st
 import csv
@@ -186,7 +185,7 @@ def Extract_Ops_Roster(Ops_Roster_Path, Date_Selected):
 # PAGE 
 # =============================================================================
 
-st.toast("Thank you for testing this programme!", icon="spinner")
+st.toast("Tap Process Roster after updating rules or selections", icon="spinner")
 
 st.set_page_config(
     page_title="Last-Minute Rostering",
@@ -229,22 +228,22 @@ st.sidebar.subheader("Replacement Rules")
 Include_Auto_All_Not_Present_Drivers_As_Replacement = st.sidebar.toggle(
     "Auto-include all non-rostered drivers",
     False,
-    help="Selecting enables **all drivers not assigned to a run on the original roster** (e.g. off/hol etc) to be used as replacement drivers that can fill in empty runs.",
+    help="Checking this box enables **all drivers not assigned to a run on the original roster** (e.g. off/hol etc) to be used as replacement drivers that can fill in empty runs.",
 )
 
 Include_Auto_Trainee_As_Replacement = st.sidebar.toggle(
-    "Re-assign trainee drivers",
+    "Re-assign trainee drivers to fill empty runs",
     False,
-    help="Selecting enables **Trainee Drivers** to be used as replacement drivers that can fill in empty runs",
+    help="Checking this box enables **Trainee Drivers** to be used as replacement drivers that can fill in empty runs",
 )
 Filter_Rosters_Trainees = False
 if Include_Auto_Trainee_As_Replacement == True:
     Filter_Rosters_Trainees = True    
 
 Include_Allow_Depot_Run_Driver_As_Replacement_AND_Cancel_Depot_Run = st.sidebar.toggle(
-    "Re-assign depot drivers",
+    "Re-assign depot drivers to fill empty runs",
     False,
-    help="Selecting enables **Depot Run Drivers** to be used as replacement drivers that can fill in empty runs. If a depot driver is selected and reassigned, the depot driver's original run will be cancelled",
+    help="Checking this box to enables **Depot Run Drivers** to be used as replacement drivers that can fill in empty runs. If a depot driver is selected and reassigned, the depot driver's original run will be cancelled",
     )
 
 Filter_Rosters_Depot = False
@@ -332,7 +331,7 @@ else:
         Is_Scheduled_To_Work_Mask &
         Is_Not_Trainee_Mask
     )
-
+#if anything changes in either the multiselects replacementn and absent or rules I wnat to force the user to tap the 'process roster' button
 Drivers_Assigned_To_Run = Drivers_All[Can_Be_Absent_Mask]
 Absent_Drivers_Select_From = Drivers_Assigned_To_Run['Driver'].tolist()
 
@@ -499,10 +498,10 @@ Operating_Runs = (
 
 col1, col2, col3, col4 = st.columns(4)
 
-col1.metric("Operating Runs", len(Operating_Runs),border=True)
-col2.metric("Absent Drivers", len(Absent_Drivers),border=True)
-col3.metric("Replacement Pool", len(Replacement_Drivers),border=True)
-col4.metric("Runs to Fill", len(Unfilled_Runs),border=True)
+col1.metric("Operating Runs", len(Operating_Runs), border=True)
+col2.metric("Absent Drivers", len(Absent_Drivers), border=True)
+col3.metric("Replacement Pool", len(Replacement_Drivers), border=True)
+col4.metric("Runs to Fill", len(Unfilled_Runs), border=True)
 
 # =============================================================================
 # REMOVE UNAVAILABLE DRIVERS FROM SKILLS MATRIX
@@ -595,7 +594,7 @@ if process:
                     "Moves": np.nan,
                     "Avg Skill": np.nan,
                     "Low Skill Runs": np.nan,
-                    "Prioritised Drivers in Roster": 0
+                    "Drivers to Phone-in": np.nan
                 })
                 continue
     
@@ -638,7 +637,7 @@ if process:
             else:
                 prioritised_driver_set = set()
             
-            n_prioritised_in_solution = len(
+            n_prioritised_in_solution = len(Unfilled_Runs) - len(
                 solution_driver_set & prioritised_driver_set
             )
 
@@ -700,7 +699,7 @@ if process:
             
             summary_results.append({
                 "Backup Drivers": combo_name,
-                "Prioritised Drivers in Roster": n_prioritised_in_solution,
+                "Drivers to Phone-in": n_prioritised_in_solution,
                 "Moves": moves,
                 "Avg Skill": avg_skill,
                 "Low Skill Runs": low_skill,
@@ -729,7 +728,7 @@ if st.session_state.get("optimisation_done", False):
     detailed_solutions = st.session_state["detailed_solutions"]
     min_moves_found = st.session_state["min_moves_found"]
 
-st.subheader("Optimisation Summary",anchor=None, help="This is an overview of all of the feasible rosters found considering each driver combination")
+st.subheader("Roster Options Summary",anchor=None, help="This is an overview of all of the feasible rosters found considering each driver combination. The order is set from fewest to most drivers needing to be phoned in for the roster to operate.")
 
 # =============================================================================
 # SUMMARY SORTING LOGIC
@@ -742,7 +741,7 @@ prioritisation_mode = (
 if prioritisation_mode:
     # Filter: only solutions with ≥1 prioritised driver
     summary_df = summary_df[
-        summary_df["Prioritised Drivers in Roster"] > -1 #was 0
+        summary_df["Drivers to Phone-in"] > -1 #was 0
     ]
 
     if summary_df.empty:
@@ -753,8 +752,8 @@ if prioritisation_mode:
 
     # Rank by number of prioritised driver
     summary_df = summary_df.sort_values(
-        ["Prioritised Drivers in Roster", "Moves","Avg Skill"],
-        ascending=[False, True, False]
+        ["Drivers to Phone-in", "Moves","Avg Skill"],
+        ascending=[True, True, False]
     ).reset_index(drop=True)
 
 else:
@@ -769,8 +768,8 @@ col1, col2, col3, col4 = st.columns(4)
 min_moves_display = summary_df["Moves"].min()
 if min_moves_display.is_integer():
     min_moves_display = int(min_moves_display)
-col1.metric("Min Moves", (min_moves_display),border=True)
-col2.metric("Driver Combinations", len(summary_df),border=True)
+col1.metric("Min Moves", (min_moves_display), border=True)
+col2.metric("Driver Combinations", len(summary_df), border=True)
 col3.metric("Feasible Solutions", len(detailed_solutions),border=True)
 col4.metric("Runs Filled", N_gaps, border=True)
 
@@ -789,7 +788,7 @@ st.dataframe(
         .format({
             "Avg Skill": "{:.2f}",
             "Low Skill Runs": "{:.0f}",
-            "Prioritised Drivers in Roster": "{:.0f}"}),
+            "Drivers to Phone-in": "{:.0f}"}),
     width='stretch',
     height='auto'
 )
@@ -798,7 +797,7 @@ st.dataframe(
 # DETAILED SOLUTION VIEW (SELECTOR-BASED)
 # =============================================================================
 
-st.subheader("Detailed Assignment",anchor=None,help="This shows the entire roster allowing you to see the drivers that need to change runs for each solution to work")
+st.subheader("Selected Roster Details",anchor=None,help="This shows the entire roster allowing you to see the drivers that need to change runs for each solution to work")
 
 if not detailed_solutions:
     st.warning("No feasible solutions found.")
@@ -827,7 +826,7 @@ selected_idx = st.selectbox(
     "Select a feasible solution to inspect",
     options=range(len(solution_labels)),
     format_func=lambda i: solution_labels[i],
-    help="You can copy and paste the driver combination names from the optimisation summary into the bar and tap enter to search or simply scroll through the options to select your desired detailed assignment roster"
+    help="You can copy and paste the driver combination names from the 'Roster Options Summary' into the bar and tap enter to search or simply scroll through the options to select your desired detailed assignment roster"
 )
 
 selected_name = feasible_summary.iloc[selected_idx]["Backup Drivers"]
