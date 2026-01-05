@@ -730,7 +730,7 @@ with st.container(border=True):
         detailed_solutions = st.session_state["detailed_solutions"]
         min_moves_found = st.session_state["min_moves_found"]
     
-    st.subheader("Roster Options Summary",anchor=None, help="This is an overview of all of the feasible rosters found considering each driver combination. The order is set from fewest to most drivers needing to be phoned in for the roster to operate.")
+    st.subheader("Summary of All Roster Options",anchor=None, help="This is an overview of all of the feasible rosters found considering each driver combination. The order is set from fewest to most drivers needing to be phoned in for the roster to operate.")
     
     # =============================================================================
     # SUMMARY SORTING LOGIC
@@ -800,7 +800,7 @@ with st.container(border=True):
 # =============================================================================
 with st.container(border=True):
     
-    st.subheader("Selected Roster Details",anchor=None,help="This shows the entire roster allowing you to see the drivers that need to change runs for each solution to work")
+    st.subheader("Details of Selected Roster",anchor=None,help="This shows the entire roster allowing you to see the drivers that need to change runs for each solution to work")
     
     if not detailed_solutions:
         st.warning("No feasible solutions found.")
@@ -826,7 +826,7 @@ with st.container(border=True):
     ).tolist()
     
     selected_idx = st.selectbox(
-        "Select a feasible solution to inspect",
+        "Select a roster option by driver names",
         options=range(len(solution_labels)),
         format_func=lambda i: solution_labels[i],
         help="You can copy and paste the driver combination names from the 'Roster Options Summary' into the bar and tap enter to search or simply scroll through the options to select your desired detailed assignment roster"
