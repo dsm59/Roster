@@ -406,8 +406,6 @@ process = st.sidebar.button(
 if not process and not st.session_state.get("optimisation_done", False):
     st.stop()
 
-st.subheader("Input Summary", anchor=None, help="This is the information that the optimisation solver will use to generate runs")
-
 # =============================================================================
 # VALIDATION
 # =============================================================================
@@ -495,13 +493,15 @@ Operating_Runs = (
 # =============================================================================
 # DISPLAY BASIC STATS
 # =============================================================================
+with st.container(border=True):
+    st.subheader("Input Summary", anchor=None, help="This is the information that the optimisation solver will use to generate runs")
 
-col1, col2, col3, col4 = st.columns(4)
-
-col1.metric("Operating Runs", len(Operating_Runs), border=True)
-col2.metric("Absent Drivers", len(Absent_Drivers), border=True)
-col3.metric("Replacement Pool", len(Replacement_Drivers), border=True)
-col4.metric("Runs to Fill", len(Unfilled_Runs), border=True)
+    col1, col2, col3, col4 = st.columns(4)
+    
+    col1.metric("Operating Runs", len(Operating_Runs), border=True)
+    col2.metric("Absent Drivers", len(Absent_Drivers), border=True)
+    col3.metric("Replacement Pool", len(Replacement_Drivers), border=True)
+    col4.metric("Runs to Fill", len(Unfilled_Runs), border=True)
 
 # =============================================================================
 # REMOVE UNAVAILABLE DRIVERS FROM SKILLS MATRIX
@@ -723,133 +723,136 @@ if process:
 # =============================================================================
 # SUMMARY DISPLAY
 # =============================================================================
-if st.session_state.get("optimisation_done", False):
-    summary_df = st.session_state["summary_df"]
-    detailed_solutions = st.session_state["detailed_solutions"]
-    min_moves_found = st.session_state["min_moves_found"]
-
-st.subheader("Roster Options Summary",anchor=None, help="This is an overview of all of the feasible rosters found considering each driver combination. The order is set from fewest to most drivers needing to be phoned in for the roster to operate.")
-
-# =============================================================================
-# SUMMARY SORTING LOGIC
-# =============================================================================
-
-prioritisation_mode = (
-    Filter_Rosters_Trainees or Filter_Rosters_Depot
-)
-
-if prioritisation_mode:
-    # Filter: only solutions with ≥1 prioritised driver
-    summary_df = summary_df[
-        summary_df["Drivers to Phone-in"] > -1 #was 0
-    ]
-
-    if summary_df.empty:
-        st.warning(
-            "No feasible roster solutions contain prioritised drivers."
-        )
-        st.stop()
-
-    # Rank by number of prioritised driver
-    summary_df = summary_df.sort_values(
-        ["Drivers to Phone-in", "Moves","Avg Skill"],
-        ascending=[True, True, False]
-    ).reset_index(drop=True)
-
-else:
-    # Default behaviour
-    summary_df = summary_df.sort_values(
-        ["Moves", "Avg Skill"],
-        ascending=[True, False]
-    ).reset_index(drop=True)
-
-
-col1, col2, col3, col4 = st.columns(4)
-min_moves_display = summary_df["Moves"].min()
-if min_moves_display.is_integer():
-    min_moves_display = int(min_moves_display)
-col1.metric("Min Moves", (min_moves_display), border=True)
-col2.metric("Driver Combinations", len(summary_df), border=True)
-col3.metric("Feasible Solutions", len(detailed_solutions),border=True)
-col4.metric("Runs Filled", N_gaps, border=True)
-
-def highlight_moves(val):
-    if pd.isna(val):
-        return ""
-    if val == 0:
-        return "background-color:#c6f6d5"
-    if val <= 2:
-        return "background-color:#faf089"
-    return "background-color:#fed7d7"
-
-st.dataframe(
-    summary_df.style
-        .map(highlight_moves, subset=["Moves"])
-        .format({
-            "Avg Skill": "{:.2f}",
-            "Low Skill Runs": "{:.0f}",
-            "Drivers to Phone-in": "{:.0f}"}),
-    width='stretch',
-    height='auto'
-)
+with st.container(border=True):
+    
+    if st.session_state.get("optimisation_done", False):
+        summary_df = st.session_state["summary_df"]
+        detailed_solutions = st.session_state["detailed_solutions"]
+        min_moves_found = st.session_state["min_moves_found"]
+    
+    st.subheader("Roster Options Summary",anchor=None, help="This is an overview of all of the feasible rosters found considering each driver combination. The order is set from fewest to most drivers needing to be phoned in for the roster to operate.")
+    
+    # =============================================================================
+    # SUMMARY SORTING LOGIC
+    # =============================================================================
+    
+    prioritisation_mode = (
+        Filter_Rosters_Trainees or Filter_Rosters_Depot
+    )
+    
+    if prioritisation_mode:
+        # Filter: only solutions with ≥1 prioritised driver
+        summary_df = summary_df[
+            summary_df["Drivers to Phone-in"] > -1 #was 0
+        ]
+    
+        if summary_df.empty:
+            st.warning(
+                "No feasible roster solutions contain prioritised drivers."
+            )
+            st.stop()
+    
+        # Rank by number of prioritised driver
+        summary_df = summary_df.sort_values(
+            ["Drivers to Phone-in", "Moves","Avg Skill"],
+            ascending=[True, True, False]
+        ).reset_index(drop=True)
+    
+    else:
+        # Default behaviour
+        summary_df = summary_df.sort_values(
+            ["Moves", "Avg Skill"],
+            ascending=[True, False]
+        ).reset_index(drop=True)
+    
+    
+    col1, col2, col3, col4 = st.columns(4)
+    min_moves_display = summary_df["Moves"].min()
+    if min_moves_display.is_integer():
+        min_moves_display = int(min_moves_display)
+    col1.metric("Min Moves", (min_moves_display), border=True)
+    col2.metric("Driver Combinations", len(summary_df), border=True)
+    col3.metric("Feasible Solutions", len(detailed_solutions),border=True)
+    col4.metric("Runs Filled", N_gaps, border=True)
+    
+    def highlight_moves(val):
+        if pd.isna(val):
+            return ""
+        if val == 0:
+            return "background-color:#c6f6d5"
+        if val <= 2:
+            return "background-color:#faf089"
+        return "background-color:#fed7d7"
+    
+    st.dataframe(
+        summary_df.style
+            .map(highlight_moves, subset=["Moves"])
+            .format({
+                "Avg Skill": "{:.2f}",
+                "Low Skill Runs": "{:.0f}",
+                "Drivers to Phone-in": "{:.0f}"}),
+        width='stretch',
+        height='auto'
+    )
 
 # =============================================================================
 # DETAILED SOLUTION VIEW (SELECTOR-BASED)
 # =============================================================================
-
-st.subheader("Selected Roster Details",anchor=None,help="This shows the entire roster allowing you to see the drivers that need to change runs for each solution to work")
-
-if not detailed_solutions:
-    st.warning("No feasible solutions found.")
-    st.stop()
-
-# Build lookup
-detailed_lookup = {sol["Name"]: sol for sol in detailed_solutions}
-
-# Filter to feasible solutions only and keep ranking from summary_df
-feasible_summary = summary_df[
-    summary_df["Moves"].notna() &
-    np.isfinite(summary_df["Moves"])
-]
-
-if feasible_summary.empty:
-    st.warning("No feasible solutions available.")
-    st.stop()
-
-# Build selector labels
-solution_labels = feasible_summary.apply(
-    lambda r: f"{r['Backup Drivers']}", #|  Moves: {int(r['Moves'])}  |  Avg Skill: {r['Avg Skill']:.2f}",
-    axis=1
-).tolist()
-
-selected_idx = st.selectbox(
-    "Select a feasible solution to inspect",
-    options=range(len(solution_labels)),
-    format_func=lambda i: solution_labels[i],
-    help="You can copy and paste the driver combination names from the 'Roster Options Summary' into the bar and tap enter to search or simply scroll through the options to select your desired detailed assignment roster"
-)
-
-selected_name = feasible_summary.iloc[selected_idx]["Backup Drivers"]
-selected_solution = detailed_lookup[selected_name]
-
-df = selected_solution["Data"].copy()
-
-def row_style(row):
-    if row.Skill_Level < 6:
-        return ["background-color:#feb2b2"] * len(row)
-    if row.Moved:
-        return ["background-color:#faf089"] * len(row)
-    return [""] * len(row)
-
-styled_df = (
-    df[["Driver", "Original_Run", "Assigned_Run", "Skill_Level", "Moved"]]
-    .style
-    .apply(row_style, axis=1)
-    .format({"Skill_Level": "{:.0f}"})
-)
-
-st.dataframe(styled_df, width="stretch")
-
-low = df[df["Skill_Level"] < 6]
-if not low.empty:
-    st.warning(f"{len(low)} driver(s) skill level ≤ 5")
+with st.container(border=True):
+    
+    st.subheader("Selected Roster Details",anchor=None,help="This shows the entire roster allowing you to see the drivers that need to change runs for each solution to work")
+    
+    if not detailed_solutions:
+        st.warning("No feasible solutions found.")
+        st.stop()
+    
+    # Build lookup
+    detailed_lookup = {sol["Name"]: sol for sol in detailed_solutions}
+    
+    # Filter to feasible solutions only and keep ranking from summary_df
+    feasible_summary = summary_df[
+        summary_df["Moves"].notna() &
+        np.isfinite(summary_df["Moves"])
+    ]
+    
+    if feasible_summary.empty:
+        st.warning("No feasible solutions available.")
+        st.stop()
+    
+    # Build selector labels
+    solution_labels = feasible_summary.apply(
+        lambda r: f"{r['Backup Drivers']}", #|  Moves: {int(r['Moves'])}  |  Avg Skill: {r['Avg Skill']:.2f}",
+        axis=1
+    ).tolist()
+    
+    selected_idx = st.selectbox(
+        "Select a feasible solution to inspect",
+        options=range(len(solution_labels)),
+        format_func=lambda i: solution_labels[i],
+        help="You can copy and paste the driver combination names from the 'Roster Options Summary' into the bar and tap enter to search or simply scroll through the options to select your desired detailed assignment roster"
+    )
+    
+    selected_name = feasible_summary.iloc[selected_idx]["Backup Drivers"]
+    selected_solution = detailed_lookup[selected_name]
+    
+    df = selected_solution["Data"].copy()
+    
+    def row_style(row):
+        if row.Skill_Level < 6:
+            return ["background-color:#feb2b2"] * len(row)
+        if row.Moved:
+            return ["background-color:#faf089"] * len(row)
+        return [""] * len(row)
+    
+    styled_df = (
+        df[["Driver", "Original_Run", "Assigned_Run", "Skill_Level", "Moved"]]
+        .style
+        .apply(row_style, axis=1)
+        .format({"Skill_Level": "{:.0f}"})
+    )
+    
+    st.dataframe(styled_df, width="stretch")
+    
+    low = df[df["Skill_Level"] < 6]
+    if not low.empty:
+        st.warning(f"{len(low)} driver(s) skill level ≤ 5")
