@@ -501,7 +501,9 @@ with st.container(border=True):
     col1.metric("Operating Runs", len(Operating_Runs), border=True)
     col2.metric("Absent Drivers", len(Absent_Drivers), border=True)
     col3.metric("Replacement Pool", len(Replacement_Drivers), border=True)
-    col4.metric("Runs to Fill", len(Unfilled_Runs), border=True)
+    
+    Runs_To_Fill = "\n".join([f"{Run} " for Run in Unfilled_Runs])
+    col4.metric("Runs to Fill", Runs_To_Fill, border=True)
 
 # =============================================================================
 # REMOVE UNAVAILABLE DRIVERS FROM SKILLS MATRIX
@@ -770,10 +772,15 @@ with st.container(border=True):
     min_moves_display = summary_df["Moves"].min()
     if min_moves_display.is_integer():
         min_moves_display = int(min_moves_display)
-    col1.metric("Min Moves", (min_moves_display), border=True)
-    col2.metric("Driver Combinations", len(summary_df), border=True)
-    col3.metric("Feasible Solutions", len(detailed_solutions),border=True)
-    col4.metric("Runs Filled", N_gaps, border=True)
+        
+    min_drivers_phone_in = summary_df["Drivers to Phone-in"].min()
+    if min_drivers_phone_in.is_integer():
+        min_drivers_phone_in = int(min_drivers_phone_in)
+        
+    col1.metric("Driver Combinations", len(summary_df), border=True)
+    col2.metric("Feasible Solutions", len(detailed_solutions),border=True)
+    col3.metric("Min Drivers to Phone In", min_drivers_phone_in, border=True)
+    col4.metric("Min Moves", (min_moves_display), border=True)
     
     def highlight_moves(val):
         if pd.isna(val):
