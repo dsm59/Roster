@@ -2,4 +2,5 @@ pdfplumber
 pandas
 scipy
 numpy
-streamlit
+streamlit>=1.40.0
+
